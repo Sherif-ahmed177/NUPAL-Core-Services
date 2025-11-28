@@ -1,11 +1,49 @@
 {
   "version": 3,
   "targets": {
-    "net9.0": {}
+    "net9.0": {
+      "NUPAL.Core.Application/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "dependencies": {
+          "NUPAL.Core.Domain": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/NUPAL.Core.Application.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/NUPAL.Core.Application.dll": {}
+        }
+      },
+      "NUPAL.Core.Domain/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "compile": {
+          "bin/placeholder/NUPAL.Core.Domain.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/NUPAL.Core.Domain.dll": {}
+        }
+      }
+    }
   },
-  "libraries": {},
+  "libraries": {
+    "NUPAL.Core.Application/1.0.0": {
+      "type": "project",
+      "path": "../NUPAL.Core.Application/NUPAL.Core.Application.csproj",
+      "msbuildProject": "../NUPAL.Core.Application/NUPAL.Core.Application.csproj"
+    },
+    "NUPAL.Core.Domain/1.0.0": {
+      "type": "project",
+      "path": "../NUPAL.Core.Domain/NUPAL.Core.Domain.csproj",
+      "msbuildProject": "../NUPAL.Core.Domain/NUPAL.Core.Domain.csproj"
+    }
+  },
   "projectFileDependencyGroups": {
-    "net9.0": []
+    "net9.0": [
+      "NUPAL.Core.Application >= 1.0.0",
+      "NUPAL.Core.Domain >= 1.0.0"
+    ]
   },
   "packageFolders": {
     "C:\\Users\\N..C..C\\.nuget\\packages\\": {}
@@ -31,7 +69,14 @@
       "frameworks": {
         "net9.0": {
           "targetAlias": "net9.0",
-          "projectReferences": {}
+          "projectReferences": {
+            "D:\\NU\\Grad 1\\NUPAL-Core-Services\\NUPAL.Core.Application\\NUPAL.Core.Application.csproj": {
+              "projectPath": "D:\\NU\\Grad 1\\NUPAL-Core-Services\\NUPAL.Core.Application\\NUPAL.Core.Application.csproj"
+            },
+            "D:\\NU\\Grad 1\\NUPAL-Core-Services\\NUPAL.Core.Domain\\NUPAL.Core.Domain.csproj": {
+              "projectPath": "D:\\NU\\Grad 1\\NUPAL-Core-Services\\NUPAL.Core.Domain\\NUPAL.Core.Domain.csproj"
+            }
+          }
         }
       },
       "warningProperties": {

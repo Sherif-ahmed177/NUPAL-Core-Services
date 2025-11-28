@@ -33,6 +33,43 @@
             "related": ".pdb;.xml"
           }
         }
+      },
+      "NUPAL.Core.Application/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "dependencies": {
+          "NUPAL.Core.Domain": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/NUPAL.Core.Application.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/NUPAL.Core.Application.dll": {}
+        }
+      },
+      "NUPAL.Core.Domain/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "compile": {
+          "bin/placeholder/NUPAL.Core.Domain.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/NUPAL.Core.Domain.dll": {}
+        }
+      },
+      "NUPAL.Core.Infrastructure/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "dependencies": {
+          "NUPAL.Core.Application": "1.0.0",
+          "NUPAL.Core.Domain": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/NUPAL.Core.Infrastructure.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/NUPAL.Core.Infrastructure.dll": {}
+        }
       }
     }
   },
@@ -67,11 +104,28 @@
         "microsoft.openapi.1.6.17.nupkg.sha512",
         "microsoft.openapi.nuspec"
       ]
+    },
+    "NUPAL.Core.Application/1.0.0": {
+      "type": "project",
+      "path": "../NUPAL.Core.Application/NUPAL.Core.Application.csproj",
+      "msbuildProject": "../NUPAL.Core.Application/NUPAL.Core.Application.csproj"
+    },
+    "NUPAL.Core.Domain/1.0.0": {
+      "type": "project",
+      "path": "../NUPAL.Core.Domain/NUPAL.Core.Domain.csproj",
+      "msbuildProject": "../NUPAL.Core.Domain/NUPAL.Core.Domain.csproj"
+    },
+    "NUPAL.Core.Infrastructure/1.0.0": {
+      "type": "project",
+      "path": "../NUPAL.Core.Infrastructure/NUPAL.Core.Infrastructure.csproj",
+      "msbuildProject": "../NUPAL.Core.Infrastructure/NUPAL.Core.Infrastructure.csproj"
     }
   },
   "projectFileDependencyGroups": {
     "net9.0": [
-      "Microsoft.AspNetCore.OpenApi >= 9.0.10"
+      "Microsoft.AspNetCore.OpenApi >= 9.0.10",
+      "NUPAL.Core.Application >= 1.0.0",
+      "NUPAL.Core.Infrastructure >= 1.0.0"
     ]
   },
   "packageFolders": {
@@ -98,7 +152,14 @@
       "frameworks": {
         "net9.0": {
           "targetAlias": "net9.0",
-          "projectReferences": {}
+          "projectReferences": {
+            "D:\\NU\\Grad 1\\NUPAL-Core-Services\\NUPAL.Core.Application\\NUPAL.Core.Application.csproj": {
+              "projectPath": "D:\\NU\\Grad 1\\NUPAL-Core-Services\\NUPAL.Core.Application\\NUPAL.Core.Application.csproj"
+            },
+            "D:\\NU\\Grad 1\\NUPAL-Core-Services\\NUPAL.Core.Infrastructure\\NUPAL.Core.Infrastructure.csproj": {
+              "projectPath": "D:\\NU\\Grad 1\\NUPAL-Core-Services\\NUPAL.Core.Infrastructure\\NUPAL.Core.Infrastructure.csproj"
+            }
+          }
         }
       },
       "warningProperties": {
