@@ -6,6 +6,7 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
+using System.Net.Mail;
 
 namespace NUPAL.Core.API.Controllers    
 {
@@ -123,14 +124,30 @@ namespace NUPAL.Core.API.Controllers
         {
             try
             {
-                if (body == null || string.IsNullOrWhiteSpace(body.email) || string.IsNullOrWhiteSpace(body.password))
+                if (body == null)
                     return BadRequest(new { error = "missing_fields" });
 
-                var s = await _service.FindByEmailAsync(body.email.ToLower());
-                if (s == null) return Unauthorized(new { error = "invalid_credentials" });
+                var email = body.email?.Trim().ToLower();
+                var password = body.password ?? string.Empty;
 
-                var ok = await _service.VerifyPasswordAsync(s, body.password);
-                if (!ok) return Unauthorized(new { error = "invalid_credentials" });
+                if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+                    return BadRequest(new { error = "missing_fields" });
+
+                // Basic email format validation
+                bool validEmail;
+                try { var addr = new MailAddress(email); validEmail = addr.Address == email; } catch { validEmail = false; }
+                if (!validEmail)
+                    return BadRequest(new { error = "invalid_email" });
+
+                // Basic password policy (min length)
+                if (password.Length < 6)
+                    return BadRequest(new { error = "invalid_password_format" });
+
+                var s = await _service.FindByEmailAsync(email);
+                if (s == null) return Unauthorized(new { error = "incorrect_email_or_password" });
+
+                var ok = await _service.VerifyPasswordAsync(s, password);
+                if (!ok) return Unauthorized(new { error = "incorrect_email_or_password" });
 
                 if (s.Account != null) s.Account.PasswordHash = null;
 
