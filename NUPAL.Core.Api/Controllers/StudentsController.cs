@@ -1,14 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using NUPAL.Core.Application.Interfaces;    
-using Nupal.Domain.Entities;
-using System.Security.Claims;
-using System.Text;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using Microsoft.AspNetCore.Authorization;
+using NUPAL.Core.Application.DTOs;
+using NUPAL.Core.Application.Interfaces;
 using System.Net.Mail;
 
-namespace NUPAL.Core.API.Controllers    
+namespace NUPAL.Core.API.Controllers
 {
     [ApiController]
     [Route("api/students")]
@@ -23,88 +18,15 @@ namespace NUPAL.Core.API.Controllers
             _config = config;
         }
 
-        public class ImportRequest
-        {
-            public AccountJson account { get; set; }
-            public EducationJson education { get; set; }
-        }
-
-        public class AccountJson
-        {
-            public string id { get; set; }
-            public string email { get; set; }
-            public string name { get; set; }
-            public string password { get; set; }
-        }
-
-        public class EducationJson
-        {
-            public double total_credits { get; set; }
-            public int num_semesters { get; set; }
-            public Dictionary<string, SemesterJson> semesters { get; set; }
-        }
-
-        public class SemesterJson
-        {
-            public bool optional { get; set; }
-            public List<CourseJson> courses { get; set; }
-            public double semester_credits { get; set; }
-            public double semester_gpa { get; set; }
-            public double cumulative_gpa { get; set; }
-        }
-
-        public class CourseJson
-        {
-            public string course_id { get; set; }
-            public string course_name { get; set; }
-            public double credit { get; set; }
-            public string grade { get; set; }
-            public double? gpa { get; set; }
-        }
-
         [HttpPost("import")]
-        public async Task<IActionResult> Import([FromBody] ImportRequest req)
+        public async Task<IActionResult> Import([FromBody] ImportStudentDto req)
         {
             try
             {
-                if (req == null || req.account == null || req.education == null || string.IsNullOrWhiteSpace(req.account.email) || string.IsNullOrWhiteSpace(req.account.password) || string.IsNullOrWhiteSpace(req.account.id))
+                if (req == null || req.Account == null || req.Education == null || string.IsNullOrWhiteSpace(req.Account.Email) || string.IsNullOrWhiteSpace(req.Account.Password) || string.IsNullOrWhiteSpace(req.Account.Id))
                     return BadRequest(new { error = "missing_fields" });
 
-                var semesters = req.education.semesters?.Select(kv => new Semester
-                {
-                    Term = kv.Key,
-                    Optional = kv.Value.optional,
-                    Courses = kv.Value.courses?.Select(c => new Course
-                    {
-                        CourseId = c.course_id,
-                        CourseName = c.course_name,
-                        Credit = c.credit,
-                        Grade = c.grade,
-                        Gpa = c.gpa
-                    }).ToList() ?? new List<Course>(),
-                    SemesterCredits = kv.Value.semester_credits,
-                    SemesterGpa = kv.Value.semester_gpa,
-                    CumulativeGpa = kv.Value.cumulative_gpa
-                }).ToList() ?? new List<Semester>();
-
-                var student = new Student
-                {
-                    Account = new Account
-                    {
-                        Id = req.account.id,
-                        Email = req.account.email.ToLower(),
-                        Name = req.account.name,
-                        PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.account.password, workFactor: 10)
-                    },
-                    Education = new Education
-                    {
-                        TotalCredits = req.education.total_credits,
-                        NumSemesters = req.education.num_semesters,
-                        Semesters = semesters
-                    }
-                };
-
-                await _service.UpsertStudentAsync(student);
+                await _service.UpsertStudentAsync(req);
                 return Ok(new { ok = true });
             }
             catch (Exception ex)
@@ -113,22 +35,16 @@ namespace NUPAL.Core.API.Controllers
             }
         }
 
-        public class LoginBody
-        {
-            public string email { get; set; }
-            public string password { get; set; }
-        }
-
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginBody body)
+        public async Task<IActionResult> Login([FromBody] LoginDto body)
         {
             try
             {
                 if (body == null)
                     return BadRequest(new { error = "missing_fields" });
 
-                var email = body.email?.Trim().ToLower();
-                var password = body.password ?? string.Empty;
+                var email = body.Email?.Trim().ToLower();
+                var password = body.Password ?? string.Empty;
 
                 if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
                     return BadRequest(new { error = "missing_fields" });
@@ -143,34 +59,15 @@ namespace NUPAL.Core.API.Controllers
                 if (password.Length < 6)
                     return BadRequest(new { error = "invalid_password_format" });
 
-                var s = await _service.FindByEmailAsync(email);
-                if (s == null) return Unauthorized(new { error = "incorrect_email_or_password" });
+                var jwtKey = _config["Jwt:Key"] ?? throw new InvalidOperationException("Missing Jwt:Key configuration");
+                var jwtIssuer = _config["Jwt:Issuer"] ?? throw new InvalidOperationException("Missing Jwt:Issuer configuration");
+                var jwtAudience = _config["Jwt:Audience"] ?? throw new InvalidOperationException("Missing Jwt:Audience configuration");
 
-                var ok = await _service.VerifyPasswordAsync(s, password);
-                if (!ok) return Unauthorized(new { error = "incorrect_email_or_password" });
+                var authResponse = await _service.AuthenticateAsync(new LoginDto { Email = email, Password = password }, jwtKey, jwtIssuer, jwtAudience);
 
-                if (s.Account != null) s.Account.PasswordHash = null;
+                if (authResponse == null) return Unauthorized(new { error = "incorrect_email_or_password" });
 
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var keyValue = _config["Jwt:Key"] ?? throw new InvalidOperationException("Missing Jwt:Key configuration");
-                var key = Encoding.UTF8.GetBytes(keyValue);
-                var tokenDescriptor = new SecurityTokenDescriptor
-                {
-                    Subject = new ClaimsIdentity(new[]
-                    {
-                        new Claim(ClaimTypes.NameIdentifier, s.Account.Id),
-                        new Claim(ClaimTypes.Email, s.Account.Email),
-                        new Claim(ClaimTypes.Name, s.Account.Name)
-                    }),
-                    Expires = DateTime.UtcNow.AddDays(7),
-                    Issuer = _config["Jwt:Issuer"] ?? throw new InvalidOperationException("Missing Jwt:Issuer configuration"),
-                    Audience = _config["Jwt:Audience"] ?? throw new InvalidOperationException("Missing Jwt:Audience configuration"),
-                    SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-                };
-                var token = tokenHandler.CreateToken(tokenDescriptor);
-                var tokenString = tokenHandler.WriteToken(token);
-
-                return Ok(new { ok = true, token = tokenString, student = s });
+                return Ok(new { ok = true, token = authResponse.Token, student = authResponse.Student });
             }
             catch (Exception ex)
             {
@@ -178,15 +75,14 @@ namespace NUPAL.Core.API.Controllers
             }
         }
 
-        [Authorize]
+        [Microsoft.AspNetCore.Authorization.Authorize]
         [HttpGet("by-email/{email}")]
         public async Task<IActionResult> GetByEmail([FromRoute] string email)
         {
             try
             {
-                var s = await _service.FindByEmailAsync(email.ToLower());
+                var s = await _service.GetStudentByEmailAsync(email);
                 if (s == null) return NotFound(new { error = "not_found" });
-                if (s.Account != null) s.Account.PasswordHash = null;
                 return Ok(s);
             }
             catch (Exception ex)
