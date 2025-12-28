@@ -14,7 +14,9 @@ namespace Nupal.Core.Infrastructure.Services
         public AgentClient(HttpClient httpClient, IConfiguration config)
         {
             _httpClient = httpClient;
-            _baseUrl = config["AgentServiceUrl"] ?? config["Agent:BaseUrl"] ?? "http://localhost:8005";
+            _baseUrl = config["AgentServiceUrl"] 
+                       ?? config["Agent:BaseUrl"] 
+                       ?? throw new InvalidOperationException("Agent service URL is not configured. Please provide 'AgentServiceUrl' in appsettings.");
             _httpClient.Timeout = TimeSpan.FromSeconds(300);
         }
 
